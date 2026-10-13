@@ -2,6 +2,10 @@
 Name: silvershop-search
 After:
   - '#silvershop'
+  # Apply the facet narrowing AFTER any module that supplies/replaces the base product list (e.g.
+  # silvershop/category-index's EffectiveCategories override), so the category listing's extensions run last
+  # and narrow whatever base list was provided instead of being bypassed or clobbered.
+  - silvershop-category-index
 ---
 SilverShop\Search\Facet\FacetRegistry:
   facets:

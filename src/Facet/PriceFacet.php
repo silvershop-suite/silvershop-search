@@ -7,7 +7,7 @@ namespace SilverShop\Search\Facet;
 use SilverShop\Search\Query\SearchQuery;
 use SilverStripe\Core\Config\Configurable;
 use SilverStripe\ORM\DataList;
-use SilverStripe\ORM\FieldType\DBCurrency;
+use SilverStripe\ORM\FieldType\DBField;
 
 /**
  * Intrinsic price-range facet over Product.BasePrice. Buckets are configurable; values are encoded "min-max"
@@ -146,10 +146,15 @@ class PriceFacet implements SearchFacet
 
     private function formatAmount(float $amount): string
     {
-        $currency = DBCurrency::create('Price');
-        $currency->setValue($amount);
+        // Format through the shop's own `Currency` DBField cast — the same one Product.BasePrice uses for the card
+        // prices — so the buckets match (symbol, placement, grouping/decimals in the shop locale). When
+        // silvershop/currency-format is installed it maps `Currency` to LocaleCurrency (e.g. "€ 25,00"); otherwise
+        // it is silvershop's ShopCurrency. Either way the sidebar matches the grid, instead of core DBCurrency's "$".
+        // 'Currency' resolves (via Injector) to DBCurrency or a shop subclass, all of which expose Nice().
+        /** @var \SilverStripe\ORM\FieldType\DBCurrency $field */
+        $field = DBField::create_field('Currency', $amount);
 
-        return $currency->Nice();
+        return $field->Nice();
     }
 
     /**

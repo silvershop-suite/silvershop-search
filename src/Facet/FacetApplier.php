@@ -27,6 +27,12 @@ class FacetApplier
             $filtered = $facet->apply($filtered, $query->selected($facet->getName()));
         }
 
+        // Facets filter through many-many / variation joins (ParentID-OR-ProductCategories, Variations.AttributeValues,
+        // Colours, …), which can emit duplicate rows for a product that matches a join more than once. Re-assert
+        // DISTINCT on the final list so the product grid — and its total count — reflect distinct products, never the
+        // inflated join-row count.
+        $filtered = $filtered->alterDataQuery(static fn ($dataQuery) => $dataQuery->distinct(true));
+
         $facetData = [];
         foreach ($facets as $facet) {
             $context = $base;

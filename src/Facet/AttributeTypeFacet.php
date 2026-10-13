@@ -9,24 +9,49 @@ use SilverShop\Search\Query\SearchQuery;
 use SilverStripe\ORM\DataList;
 
 /**
- * One attribute type as a facet (e.g. Colour, with options Red/Blue). Matches products that have a variation
+ * One attribute dimension as a facet (e.g. Colour, with options Red/Blue). Matches products that have a variation
  * carrying the selected attribute value(s): Product → Variations → AttributeValues. Values within the facet are
- * OR-ed; different attribute types (separate facets) AND together. The title is the type's front-end Label.
+ * OR-ed; different attribute dimensions (separate facets) AND together. The title is the type's front-end Label.
+ *
+ * A facet may cover MORE THAN ONE {@link AttributeType} when several resolve to the same front-end label (e.g. a
+ * "Shirt Size" type and a generic "Size" type both labelled "Size"). Those are merged into a single facet whose
+ * options are the union of the types' values, so the sidebar never shows the same label twice and filtering matches
+ * products using either type's value. Attribute value ids are globally unique, so a single id filter covers them all.
  */
 class AttributeTypeFacet implements SearchFacet
 {
-    public function __construct(private readonly AttributeType $type)
+    /**
+     * The attribute type(s) this facet covers, ordered by id (lowest first) for a stable facet name.
+     *
+     * @var array<int, AttributeType>
+     */
+    private readonly array $types;
+
+    /**
+     * @param AttributeType|array<int, AttributeType> $types one type, or several that share a front-end label
+     */
+    public function __construct(AttributeType|array $types)
     {
+        $list = is_array($types) ? array_values($types) : [$types];
+        usort($list, static fn (AttributeType $a, AttributeType $b): int => (int) $a->ID <=> (int) $b->ID);
+        $this->types = $list;
+    }
+
+    private function primaryType(): AttributeType
+    {
+        return $this->types[0];
     }
 
     public function getName(): string
     {
-        return 'attr-' . (int) $this->type->ID;
+        return 'attr-' . (int) $this->primaryType()->ID;
     }
 
     public function getTitle(): string
     {
-        return (string) ($this->type->Label ?: $this->type->Name);
+        $type = $this->primaryType();
+
+        return (string) ($type->Label ?: $type->Name);
     }
 
     public function isAvailable(): bool
@@ -49,19 +74,21 @@ class AttributeTypeFacet implements SearchFacet
         $selected = array_map('strval', $query->selected($this->getName()));
         $options = [];
 
-        foreach ($this->type->Values() as $value) {
-            $count = (int) $context->filter('Variations.AttributeValues.ID', (int) $value->ID)->count();
-            $optionValue = (string) $value->ID;
-            $active = in_array($optionValue, $selected, true);
-            if ($count === 0 && !$active) {
-                continue;
+        foreach ($this->types as $type) {
+            foreach ($type->Values() as $value) {
+                $count = (int) $context->filter('Variations.AttributeValues.ID', (int) $value->ID)->count();
+                $optionValue = (string) $value->ID;
+                $active = in_array($optionValue, $selected, true);
+                if ($count === 0 && !$active) {
+                    continue;
+                }
+                $options[] = [
+                    'value' => $optionValue,
+                    'label' => (string) $value->Value,
+                    'count' => $count,
+                    'active' => $active,
+                ];
             }
-            $options[] = [
-                'value' => $optionValue,
-                'label' => (string) $value->Value,
-                'count' => $count,
-                'active' => $active,
-            ];
         }
 
         return $options;

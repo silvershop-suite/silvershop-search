@@ -62,6 +62,34 @@ class AttributeFacetTest extends SapphireTest
         $this->assertFalse((new AttributeFacet())->isAvailable(), 'no types defined → no attribute facets');
     }
 
+    public function testMergesTypesWithTheSameLabel(): void
+    {
+        // Two distinct types that resolve to the same front-end label ("Size") must collapse into ONE facet whose
+        // options are the union of both value sets — so the sidebar never shows "Size" twice.
+        $shirtSize = AttributeType::create(['Name' => 'Shirt Size', 'Label' => 'Size']);
+        $shirtSize->write();
+        $small = AttributeValue::create(['Value' => 'Small', 'TypeID' => $shirtSize->ID]);
+        $small->write();
+
+        $size = AttributeType::create(['Name' => 'Size', 'Label' => 'Size']);
+        $size->write();
+        $s = AttributeValue::create(['Value' => 'S', 'TypeID' => $size->ID]);
+        $s->write();
+
+        $facets = (new AttributeFacet())->expand();
+        $this->assertCount(1, $facets, 'the two "Size" types merge into a single facet');
+        $this->assertSame('attr-' . (int) $shirtSize->ID, $facets[0]->getName(), 'named by the lowest type id');
+
+        // With a product per value, the merged facet offers values from BOTH types under one heading.
+        $this->variedProduct('Small Shirt', (int) $small->ID);
+        $this->variedProduct('S Shirt', (int) $s->ID);
+        $merged = $facets[0]->getOptions(Product::get(), new SearchQuery());
+        $values = array_map(static fn (array $o): string => $o['label'], $merged);
+        $this->assertContains('Small', $values);
+        $this->assertContains('S', $values, 'the merged facet offers values from BOTH types');
+    }
+
+
     public function testApplyMatchesProductsWithTheValue(): void
     {
         $this->seed();

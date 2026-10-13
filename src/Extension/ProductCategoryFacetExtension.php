@@ -31,9 +31,35 @@ class ProductCategoryFacetExtension extends Extension
     private static bool $suspend = false;
 
     /**
-     * Narrow the category's product listing by the active facet selections (core model hook).
+     * Narrow the category's product listing by the active facet selections (core model hook). Handles the plain-core
+     * path, where core builds the list itself and then calls this.
      */
     public function updateProductsShowable(&$products): void
+    {
+        $this->narrow($products);
+    }
+
+    /**
+     * Also narrow a list that another module supplied up front via core's `overrideProductsShowable` hook (e.g.
+     * silvershop/category-index's EffectiveCategories index). Core returns that override immediately, skipping
+     * `updateProductsShowable`, so without this the facet selections would be silently ignored on category pages
+     * whenever such a module is installed. This extension is ordered to run after the supplier (see _config), so the
+     * override is already set when we narrow it. No-op when nothing supplied an override.
+     *
+     * @param mixed $override
+     */
+    public function overrideProductsShowable(&$override, $recursive): void
+    {
+        $this->narrow($override);
+    }
+
+    /**
+     * Apply the request's facet selections to a product DataList in place. Guarded against re-entrancy (sidebar
+     * counting) and against being called with a non-list / outside a request.
+     *
+     * @param mixed $products
+     */
+    private function narrow(&$products): void
     {
         if (self::$suspend || !$products instanceof DataList) {
             return;

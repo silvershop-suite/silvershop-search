@@ -22,6 +22,11 @@ class FacetView
     {
         $list = ArrayList::create();
         foreach ($facetData as $facet) {
+            // Hide a facet that has no options for the current result set (e.g. an attribute no product in this
+            // category carries). An empty section would render an empty, confusing heading, so skip it entirely.
+            if (empty($facet['options'])) {
+                continue;
+            }
             $options = ArrayList::create();
             foreach ($facet['options'] as $option) {
                 $options->push(ArrayData::create([
