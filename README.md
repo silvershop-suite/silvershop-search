@@ -14,7 +14,7 @@ modules plug their own facets into.
 ## Installation
 
 ```bash
-composer require silvershop/search
+composer require silvershop-suite/search
 ```
 
 Run `dev/build?flush=1`, then add a **Search Page** in the CMS. Its form submits a query (GET) back to itself and the
@@ -23,7 +23,7 @@ page renders faceted, sorted, paginated results.
 ## Architecture
 
 ```
-silvershop/search  ──  SearchBackend (interface)  ──  DbSearchBackend   (default, no infra)
+silvershop-suite/search  ──  SearchBackend (interface)  ──  DbSearchBackend   (default, no infra)
                                                    └─  AlgoliaBackend…   (separate adapter modules, later)
                     ──  SearchFacet  (interface)  ──  CategoryFacet, PriceFacet   (intrinsic, here)
                         + FacetRegistry            └─  BrandFacet (brands), RatingFacet (reviews), … (in their modules)
@@ -37,20 +37,20 @@ silvershop/search  ──  SearchBackend (interface)  ──  DbSearchBackend   
 
 ## Adding a facet from another module
 
-Ship a `SearchFacet` in the owning module and register it behind a guard, with `silvershop/search` as a **`suggest`**
+Ship a `SearchFacet` in the owning module and register it behind a guard, with `silvershop-suite/search` as a **`suggest`**
 (not a hard requirement) so the module stays standalone:
 
 ```php
-// src/Search/BrandFacet.php in silvershop/brands
+// src/Search/BrandFacet.php in silvershop-suite/brands
 class BrandFacet implements \SilverShop\Search\Facet\SearchFacet { /* getName()='brand', apply(), getOptions() … */ }
 ```
 
 ```yaml
-# _config/search.yml in silvershop/brands — only registers when search is installed
+# _config/search.yml in silvershop-suite/brands — only registers when search is installed
 ---
 Name: silvershop-brands-search
 Only:
-  moduleexists: silvershop/search
+  moduleexists: silvershop-suite/search
 ---
 SilverShop\Search\Facet\FacetRegistry:
   facets:
@@ -86,14 +86,14 @@ facet, AND across), and shareable. Facet links are `rel=nofollow` to keep crawle
 
 ## Integrations (all soft / optional)
 
-- **silvershop/category-index** — not required: the category facet works on core alone, but when this module is
+- **silvershop-suite/category-index** — not required: the category facet works on core alone, but when this module is
   installed it uses the flat `EffectiveCategories` index (one JOIN) instead of core's per-level tree walk — faster,
   especially for facet counts.
 - **brands**, **reviews**, **stock** — each ships its own facet (brand / rating / stock), registered only when both
   it and search are installed.
-- **silvershop/analytics** — search calls its `record()` hook so search terms and zero-result queries feed the
+- **silvershop-suite/analytics** — search calls its `record()` hook so search terms and zero-result queries feed the
   analytics reports. Dormant until analytics is installed.
-- **silvershop/currency-format** — price-bucket labels respect the shop currency.
+- **silvershop-suite/currency-format** — price-bucket labels respect the shop currency.
 
 ## Roadmap
 

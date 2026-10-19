@@ -1,5 +1,5 @@
 {
-    "name": "silvershop/search",
+    "name": "silvershop-suite/search",
     "description": "Faceted product search & navigation for SilverShop: a search results page, a pluggable search backend (DB default), and a facet framework that modules (brands, reviews, category-index, stock) plug their own facets into.",
     "type": "silverstripe-vendormodule",
     "keywords": ["silverstripe", "silvershop", "ecommerce", "search", "facets", "faceted-navigation"],
@@ -26,7 +26,7 @@
         "silverstripe/sqlite3": "^4"
     },
     "suggest": {
-        "silvershop/analytics": "Records search terms + zero-result queries for the search-insights reports",
+        "silvershop-suite/analytics": "Records search terms + zero-result queries for the search-insights reports",
         "symbiote/silverstripe-queuedjobs": "Pushes external-engine reindexing to a background job"
     },
     "extra": {
