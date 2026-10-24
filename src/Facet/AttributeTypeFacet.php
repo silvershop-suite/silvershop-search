@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SilverShop\Search\Facet;
 
 use SilverShop\Model\Variation\AttributeType;
+use SilverShop\Model\Variation\Variation;
 use SilverShop\Search\Query\SearchQuery;
 use SilverStripe\ORM\DataList;
 
@@ -72,11 +73,15 @@ class AttributeTypeFacet implements SearchFacet
     public function getOptions(DataList $context, SearchQuery $query): array
     {
         $selected = array_map('strval', $query->selected($this->getName()));
-        $options = [];
 
+        // One pass over the context's variations instead of a COUNT query per attribute value (N+1): the count of
+        // each value is the number of distinct context products that have a variation carrying it.
+        $counts = $this->countProductsByValue($context);
+
+        $options = [];
         foreach ($this->types as $type) {
             foreach ($type->Values() as $value) {
-                $count = (int) $context->filter('Variations.AttributeValues.ID', (int) $value->ID)->count();
+                $count = (int) ($counts[(int) $value->ID] ?? 0);
                 $optionValue = (string) $value->ID;
                 $active = in_array($optionValue, $selected, true);
                 if ($count === 0 && !$active) {
@@ -92,5 +97,32 @@ class AttributeTypeFacet implements SearchFacet
         }
 
         return $options;
+    }
+
+    /**
+     * Distinct context-product count per attribute value, built in a couple of queries: the context product ids,
+     * then the context's variations with their AttributeValues eager-loaded, counted (distinct product) per value in
+     * PHP. Replaces the per-value `$context->filter('Variations.AttributeValues.ID', $id)->count()` N+1.
+     *
+     * @return array<int, int> attributeValueID => distinct product count
+     */
+    private function countProductsByValue(DataList $context): array
+    {
+        $productIds = $context->columnUnique('ID');
+        if (!$productIds) {
+            return [];
+        }
+
+        // productID set per value, so a product with several matching variations is counted once.
+        $productsByValue = [];
+        $variations = Variation::get()->filter('ProductID', $productIds)->eagerLoad('AttributeValues');
+        foreach ($variations as $variation) {
+            $productId = (int) $variation->ProductID;
+            foreach ($variation->AttributeValues() as $value) {
+                $productsByValue[(int) $value->ID][$productId] = true;
+            }
+        }
+
+        return array_map('count', $productsByValue);
     }
 }

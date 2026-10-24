@@ -53,14 +53,21 @@ class CategoryFacet implements SearchFacet
     public function getOptions(DataList $context, SearchQuery $query): array
     {
         $selected = array_map('strval', $query->selected($this->getName()));
-        $options = [];
 
+        // With the flat EffectiveCategories index, count every category in one pass over the context instead of a
+        // COUNT query per category (N+1). Without the index, fall back to the per-category count (the core-native
+        // recursive membership can't be collapsed as cheaply).
+        $counts = $this->hasIndex() ? $this->countProductsByCategory($context) : null;
+
+        $options = [];
         foreach (ProductCategory::get() as $category) {
             $value = (string) $category->URLSegment;
             if ($value === '') {
                 continue;
             }
-            $count = (int) $this->applyCategories($context, [$category])->count();
+            $count = $counts !== null
+                ? (int) ($counts[(int) $category->ID] ?? 0)
+                : (int) $this->applyCategories($context, [$category])->count();
             $active = in_array($value, $selected, true);
             if ($count === 0 && !$active) {
                 continue;
@@ -74,6 +81,26 @@ class CategoryFacet implements SearchFacet
         }
 
         return $options;
+    }
+
+    /**
+     * Distinct context-product count per effective category, built in a couple of queries: the context's products
+     * with their EffectiveCategories eager-loaded, tallied per category in PHP. Each product appears once per
+     * category in the flat index, so a simple increment is the distinct-product count. Index-only (see getOptions).
+     *
+     * @return array<int, int> categoryID => distinct product count
+     */
+    private function countProductsByCategory(DataList $context): array
+    {
+        $counts = [];
+        foreach ($context->eagerLoad('EffectiveCategories') as $product) {
+            foreach ($product->EffectiveCategories() as $category) {
+                $id = (int) $category->ID;
+                $counts[$id] = ($counts[$id] ?? 0) + 1;
+            }
+        }
+
+        return $counts;
     }
 
     /**
