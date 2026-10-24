@@ -70,6 +70,8 @@ class StockFacet implements SearchFacet
      */
     private function inStockIds(DataList $list): array
     {
+        $this->primeStock($list);
+
         $ids = [];
         foreach ($list as $product) {
             if ($product->hasMethod('hasAvailableStock') && $product->hasAvailableStock()) {
@@ -78,5 +80,30 @@ class StockFacet implements SearchFacet
         }
 
         return $ids;
+    }
+
+    /**
+     * Prime silvershop/stock's request caches for the whole list up front, so the per-product hasAvailableStock()
+     * checks below read from cache instead of each firing its own warehouse-stock / cart-sum / variation queries
+     * (the availability check is per-product by design, so counting it over a listing is otherwise an N+1). No-op
+     * when the stock module is absent or predates the batch-prime API.
+     */
+    private function primeStock(DataList $list): void
+    {
+        $ext = 'SilverShop\\Stock\\Extensions\\ProductStockExtension';
+        if (!class_exists($ext) || !method_exists($ext, 'primeStockCache')) {
+            return;
+        }
+
+        $map = $list->map('ID', 'ClassName')->toArray();
+        if (!$map) {
+            return;
+        }
+
+        $ext::primeStockCache($map);
+        $ext::primeCartReservationsCache($map);
+        if (method_exists($ext, 'primeVariationsCache')) {
+            $ext::primeVariationsCache($map);
+        }
     }
 }
