@@ -20,6 +20,10 @@ class FacetApplier
      */
     public static function apply(DataList $base, SearchQuery $query): array
     {
+        // Fresh sidebar build: drop the attribute dimensions' shared value-count cache so this build's counts reflect
+        // the current context/catalogue, never a prior request's.
+        AttributeTypeFacet::flushValueCountCache();
+
         $facets = (new FacetRegistry())->all();
 
         $filtered = $base;

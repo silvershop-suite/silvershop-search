@@ -29,6 +29,25 @@ class AttributeTypeFacet implements SearchFacet
     private readonly array $types;
 
     /**
+     * Shared per-sidebar cache of the full attribute-value → distinct-product-count map, keyed by the context's
+     * query signature. Every attribute dimension (Colour, Size, …) counts over the same context and the map already
+     * covers ALL values, so the first dimension builds it (one variation fetch) and the rest reuse it instead of each
+     * re-fetching the context's variations. Reset per sidebar build by {@see FacetApplier} so it never serves a stale
+     * count across requests.
+     *
+     * @var array<string, array<int, int>>
+     */
+    private static array $valueCountCache = [];
+
+    /**
+     * Drop the shared value-count cache. Called by {@see FacetApplier::apply()} at the start of each sidebar build.
+     */
+    public static function flushValueCountCache(): void
+    {
+        self::$valueCountCache = [];
+    }
+
+    /**
      * @param AttributeType|array<int, AttributeType> $types one type, or several that share a front-end label
      */
     public function __construct(AttributeType|array $types)
@@ -108,9 +127,16 @@ class AttributeTypeFacet implements SearchFacet
      */
     private function countProductsByValue(DataList $context): array
     {
+        // The map covers every attribute value, so it is identical for every dimension counting over this context —
+        // compute it once per context and share it (see $valueCountCache).
+        $signature = $this->contextSignature($context);
+        if (array_key_exists($signature, self::$valueCountCache)) {
+            return self::$valueCountCache[$signature];
+        }
+
         $productIds = $context->columnUnique('ID');
         if (!$productIds) {
-            return [];
+            return self::$valueCountCache[$signature] = [];
         }
 
         // productID set per value, so a product with several matching variations is counted once.
@@ -123,6 +149,23 @@ class AttributeTypeFacet implements SearchFacet
             }
         }
 
-        return array_map('count', $productsByValue);
+        return self::$valueCountCache[$signature] = array_map('count', $productsByValue);
+    }
+
+    /**
+     * A stable fingerprint of the context list (its SQL + bound params), so two dimensions counting over the same
+     * context share one computed map. Falls back to a unique key (no sharing) if the SQL can't be built, so a failure
+     * recomputes rather than risking a wrong shared count.
+     */
+    private function contextSignature(DataList $context): string
+    {
+        try {
+            $params = [];
+            $sql = $context->dataQuery()->query()->sql($params);
+
+            return md5($sql . '|' . json_encode($params));
+        } catch (\Throwable $e) {
+            return uniqid('ctx', true);
+        }
     }
 }
