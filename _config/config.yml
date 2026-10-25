@@ -19,6 +19,14 @@ SilverShop\Search\Backend\BackendRegistry:
   backends:
     db: '%$SilverShop\Search\Backend\DbSearchBackend'
 
+# Dedicated cache pool for the computed facet sidebar (see FacetApplier::facetData). Its own namespace so a
+# `?flush` clears it and it never collides with other caches.
+SilverStripe\Core\Injector\Injector:
+  Psr\SimpleCache\CacheInterface.silvershopFacets:
+    factory: SilverStripe\Core\Cache\CacheFactory
+    constructor:
+      namespace: 'silvershopFacets'
+
 # Faceted navigation on category pages (filtering is automatic; add $SearchFacets to the category template for a sidebar).
 SilverShop\Page\ProductCategory:
   extensions:

@@ -70,7 +70,7 @@ class ProductCategoryFacetExtension extends Extension
             return;
         }
 
-        $products = FacetApplier::apply($products, $this->queryFrom($request))['products'];
+        $products = FacetApplier::applyProducts($products, $this->queryFrom($request));
     }
 
     /**
@@ -93,9 +93,9 @@ class ProductCategoryFacetExtension extends Extension
         }
 
         $request = $this->owner->getRequest();
-        $data = FacetApplier::apply($base, $this->queryFrom($request));
+        $facets = FacetApplier::facetData($base, $this->queryFrom($request));
 
-        return FacetView::build($data['facets'], $request, (string) $category->Link());
+        return FacetView::build($facets, $request, (string) $category->Link());
     }
 
     private function queryFrom(HTTPRequest $request): SearchQuery
