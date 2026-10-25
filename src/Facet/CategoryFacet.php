@@ -112,9 +112,14 @@ class CategoryFacet implements SearchFacet
     {
         if ($this->hasIndex()) {
             // EffectiveCategories already carries every ancestor, so a direct match covers descendants.
+            // Resolve the matching product IDs in a STANDALONE query, then narrow $products by primary key.
+            // Filtering EffectiveCategories.ID directly on $products would collide with any EffectiveCategories
+            // JOIN the base list already carries — a category page's own listing adds one — because Silverstripe
+            // reuses the single join and ANDs both category conditions onto one row, matching nothing.
             $ids = array_map(static fn (ProductCategory $c): int => (int) $c->ID, $categories);
+            $matchIds = Product::get()->filter('EffectiveCategories.ID', $ids)->columnUnique('ID');
 
-            return $products->filter('EffectiveCategories.ID', $ids);
+            return $products->filter('ID', $matchIds ?: [-1]);
         }
 
         // Core-native: expand each category to itself + descendants, then match primary or secondary membership.
