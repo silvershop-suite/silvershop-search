@@ -7,6 +7,7 @@ namespace SilverShop\Search\Facet;
 use SilverShop\Model\Variation\AttributeType;
 use SilverShop\Model\Variation\Variation;
 use SilverShop\Search\Query\SearchQuery;
+use SilverStripe\Core\Resettable;
 use SilverStripe\ORM\DataList;
 
 /**
@@ -19,7 +20,7 @@ use SilverStripe\ORM\DataList;
  * options are the union of the types' values, so the sidebar never shows the same label twice and filtering matches
  * products using either type's value. Attribute value ids are globally unique, so a single id filter covers them all.
  */
-class AttributeTypeFacet implements SearchFacet
+class AttributeTypeFacet implements SearchFacet, Resettable
 {
     /**
      * The attribute type(s) this facet covers, ordered by id (lowest first) for a stable facet name.
@@ -45,6 +46,16 @@ class AttributeTypeFacet implements SearchFacet
     public static function flushValueCountCache(): void
     {
         self::$valueCountCache = [];
+    }
+
+    /**
+     * {@see Resettable}: clear the shared static cache between tests (SapphireTest's FlushableTestState resets every
+     * Resettable before each test) and on flush. Production still flushes it per sidebar build via
+     * {@see FacetApplier::apply()}; this just guarantees a stale map can never survive across tests or a flush.
+     */
+    public static function reset(): void
+    {
+        self::flushValueCountCache();
     }
 
     /**
