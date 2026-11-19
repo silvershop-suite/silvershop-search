@@ -9,8 +9,8 @@ use SilverStripe\ORM\DataList;
 
 /**
  * One filter dimension on a product result list (brand, price, rating, …). The search core ships the intrinsic
- * facets (price, attributes); optional modules ship their own — a brand facet in silvershop/brands, a rating facet
- * in silvershop/reviews, etc. — and register them into {@link FacetRegistry}. The results controller is
+ * facets (price, attributes); optional modules ship their own — a brand facet in silvershop-suite/brands, a rating
+ * facet in silvershop-suite/reviews, etc. — and register them into {@link FacetRegistry}. The results controller is
  * module-agnostic: it never names a concrete Brand/Review, it just drives whatever facets are registered.
  */
 interface SearchFacet

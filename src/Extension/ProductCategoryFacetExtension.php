@@ -41,7 +41,7 @@ class ProductCategoryFacetExtension extends Extension
 
     /**
      * Also narrow a list that another module supplied up front via core's `overrideProductsShowable` hook (e.g.
-     * silvershop/category-index's EffectiveCategories index). Core returns that override immediately, skipping
+     * silvershop-suite/category-index's EffectiveCategories index). Core returns that override immediately, skipping
      * `updateProductsShowable`, so without this the facet selections would be silently ignored on category pages
      * whenever such a module is installed. This extension is ordered to run after the supplier (see _config), so the
      * override is already set when we narrow it. No-op when nothing supplied an override.

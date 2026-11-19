@@ -9,7 +9,7 @@ use SilverShop\Search\Query\SearchQuery;
 use SilverStripe\Dev\SapphireTest;
 
 /**
- * Exercises the core-native path (silvershop/category-index is not installed in this module's tests, so the facet
+ * Exercises the core-native path (silvershop-suite/category-index is not installed in this module's tests, so the facet
  * walks ParentID/descendants via core). The faster index path is covered by live verification on an installed site.
  */
 class CategoryFacetTest extends SapphireTest

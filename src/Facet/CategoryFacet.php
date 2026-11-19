@@ -12,7 +12,7 @@ use SilverStripe\ORM\DataList;
 /**
  * Intrinsic category facet. Works on SilverShop core alone — matching products in a category and its descendants via
  * core's `AllChildCategoryIDs()` + the `ParentID`-OR-`ProductCategories` filter — and transparently uses
- * silvershop/category-index's flat `EffectiveCategories` index (one JOIN) when that module is installed, which is
+ * silvershop-suite/category-index's flat `EffectiveCategories` index (one JOIN) when that module is installed, which is
  * faster and lets facet counts run without the per-level tree walk. Facet values are category URL segments.
  *
  * Ships in the search core (not in category-index) so category faceting is available to every shop; category-index
@@ -139,7 +139,7 @@ class CategoryFacet implements SearchFacet
     }
 
     /**
-     * Whether silvershop/category-index's flat EffectiveCategories relation is present on Product.
+     * Whether silvershop-suite/category-index's flat EffectiveCategories relation is present on Product.
      */
     private function hasIndex(): bool
     {

@@ -14,7 +14,7 @@ use SilverStripe\Core\Injector\Injector;
  *   SilverShop\Search\Facet\FacetRegistry:
  *     facets:
  *       price: '%$SilverShop\Search\Facet\PriceFacet'
- *       brand: '%$SilverShop\Brands\Search\BrandFacet'   # registered by silvershop/brands, guarded by moduleexists
+ *       brand: '%$SilverShop\Brands\Search\BrandFacet'   # registered by silvershop-suite/brands (moduleexists-guarded)
  *
  * Order in the config is the display order. Unavailable facets (module/data absent) are filtered out.
  */

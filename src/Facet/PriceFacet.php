@@ -148,9 +148,10 @@ class PriceFacet implements SearchFacet
     {
         // Format through the shop's own `Currency` DBField cast — the same one Product.BasePrice uses for the card
         // prices — so the buckets match (symbol, placement, grouping/decimals in the shop locale). When
-        // silvershop/currency-format is installed it maps `Currency` to LocaleCurrency (e.g. "€ 25,00"); otherwise
-        // it is silvershop's ShopCurrency. Either way the sidebar matches the grid, instead of core DBCurrency's "$".
-        // 'Currency' resolves (via Injector) to DBCurrency or a shop subclass, all of which expose Nice().
+        // silvershop-suite/currency-format is installed it maps `Currency` to LocaleCurrency (e.g. "€ 25,00");
+        // otherwise it is silvershop's ShopCurrency. Either way the sidebar matches the grid, instead of core
+        // DBCurrency's "$". 'Currency' resolves (via Injector) to DBCurrency or a shop subclass, all of which expose
+        // Nice().
         /** @var \SilverStripe\ORM\FieldType\DBCurrency $field */
         $field = DBField::create_field('Currency', $amount);
 

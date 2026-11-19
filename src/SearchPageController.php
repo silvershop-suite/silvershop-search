@@ -48,8 +48,8 @@ class SearchPageController extends PageController
     }
 
     /**
-     * Hand the query + result count to silvershop/analytics when it is installed (unblocks its search-term reports).
-     * Dormant — and non-fatal — when analytics is absent.
+     * Hand the query + result count to silvershop-suite/analytics when it is installed (unblocks its search-term
+     * reports). Dormant — and non-fatal — when analytics is absent.
      */
     private function recordSearch(SearchQuery $query, int $total): void
     {
